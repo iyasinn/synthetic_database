@@ -12,18 +12,23 @@ supabase: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_
 def generate_graph():
 
     # Read in data
+    node_data = supabase.table("modules").select("*").execute()
+    df = pd.DataFrame(node_data.data)
+    df.to_csv("modules.csv", index=False)
+
     data = supabase.table("linkages").select("*").execute()
     df = pd.DataFrame(data.data)
     df.to_csv("linkages.csv", index=False)
+
     # print("Data saved to 'linkages.csv'.")
 
     # Load data from CSV
     data = pd.read_csv("linkages.csv")
+    node_data = pd.read_csv("modules.csv")
 
     # Ensure identifiers are strings to avoid type issues
     data["parent"] = data["parent"].astype(str)
     data["child"] = data["child"].astype(str)
-
 
     # Initialize Pyvis network
     net = Network(
@@ -33,7 +38,7 @@ def generate_graph():
     # Sample the data
     sample = data.sample(len(data), random_state=1)
     # Add nodes and edges
-    nodes = list(set(sample["parent"]).union(set(sample["child"])))
+    nodes = node_data["module_id"]
     net.add_nodes(nodes)  # Ensure all nodes are added before adding edges
 
     for node in net.nodes:
